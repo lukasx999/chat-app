@@ -11,26 +11,35 @@ use model::{ChatHistory, Message};
 
 
 
-fn handle_connection(mut stream: TcpStream) {
+fn route_get(route: &str) -> String {
+    format!("GET {route} HTTP/1.1")
+}
+
+
+fn handle_connection(db: &DB, mut stream: TcpStream) {
 
     let buf = BufReader::new(&mut stream);
     let request: String = buf.lines().next().unwrap().unwrap();
 
-    let mut response = String::new();
+    // db.add_message("mike", "hello");
 
-    response = match request.as_str() {
-        "GET /chat_history HTTP/1.1" => {
-            "HTTP/1.1 200 OK".to_owned()
-            // TODO: return json
-        }
-        _ => {
-            "HTTP/1.1 404 NOT FOUND".to_owned()
-        }
+
+    let response = if request.as_str() == route_get("/chat_history") {
+
+        let history: ChatHistory = db.get_history();
+        let json: String = history.serialize();
+
+        format!("HTTP/1.1 200 OK\n
+                Content-Type: application/json\n
+                Content-Length: {}\r\n
+                {}", json, json.len()+1)
+
+    }
+    else {
+        "HTTP/1.1 404 NOT FOUND".to_owned()
     };
 
-
-    // stream.write_all(response.as_bytes()).unwrap();
-
+    stream.write_all(response.as_bytes()).unwrap();
 
 }
 
@@ -49,18 +58,14 @@ fn main() -> std::io::Result<()> {
         return Ok(());
     }
 
-    // db.add_message("mike", "hello");
-    let history: ChatHistory = db.get_history();
 
 
-    /*
     let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
 
     for stream in listener.incoming() {
         let stream = stream.unwrap();
-        handle_connection(stream);
+        handle_connection(&db, stream);
     }
-    */
 
 
 

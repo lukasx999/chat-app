@@ -21,7 +21,6 @@ impl DB {
     }
 
     pub fn setup(&self) {
-
         self.conn.execute(
             "CREATE TABLE chat (
             id      INTEGER PRIMARY KEY,
@@ -48,21 +47,18 @@ impl DB {
 
         let mut stmt = self.conn.prepare("SELECT * FROM chat").unwrap();
 
-        let history: ChatHistory = stmt.query_map([], |row| {
-
-            let (id, sender, message): (u32, String, String) = (
-                row.get(0).unwrap(),
-                row.get(1).unwrap(),
-                row.get(2).unwrap()
-            );
-
-            Ok(Message::new(id, sender.as_str(), message.as_str()))
-
-        }).unwrap().map(|item| {
-                item.unwrap()
-            }).collect();
-
-        history
+        ChatHistory::from(
+            stmt.query_map([], |row| {
+                let (id, sender, message): (u32, String, String) = (
+                    row.get(0).unwrap(),
+                    row.get(1).unwrap(),
+                    row.get(2).unwrap()
+                );
+                Ok(Message::new(id, sender.as_str(), message.as_str()))
+            })
+                .unwrap()
+                .map(|item| item.unwrap())
+                .collect::<Vec<Message>>())
 
     }
 

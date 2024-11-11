@@ -28,5 +28,31 @@ impl Message {
 
 }
 
-pub type ChatHistory = Vec<Message>;
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChatHistory(Vec<Message>);
 
+impl From<Vec<Message>> for ChatHistory {
+    fn from(v: Vec<Message>) -> Self {
+        Self(v.clone())
+    }
+}
+
+impl ChatHistory {
+
+    pub fn new() -> Self {
+        Self(Vec::new())
+    }
+
+    pub fn add(&mut self, message: &Message) {
+        self.0.push(message.clone());
+    }
+
+    pub fn serialize(&self) -> String {
+        serde_json::to_string(&self.0).unwrap()
+    }
+
+    pub fn deserialize(json: &String) -> Self {
+        serde_json::from_str(json).unwrap()
+    }
+
+}
