@@ -3,6 +3,10 @@ use eframe::egui;
 mod client_chat;
 use client_chat as chat;
 
+mod model;
+use model::{ChatHistory, Message};
+
+
 struct ChatClient {
     username: String,
     current_message: String,
@@ -73,7 +77,22 @@ impl eframe::App for ChatClient {
 const WINDOW_WIDTH: f32 = 800.0;
 const WINDOW_HEIGHT: f32 = 600.0;
 
+
+fn get_chat_history() -> ChatHistory {
+    let response: reqwest::blocking::Response = reqwest::blocking
+        ::get("http://127.0.0.1:7878/chat_history")
+        .unwrap();
+
+    let json: String = response.text().unwrap();
+    dbg!(&json);
+    ChatHistory::deserialize(&json)
+}
+
+
 fn main() -> eframe::Result {
+
+    let chat: ChatHistory = get_chat_history();
+
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_title("Chat App")

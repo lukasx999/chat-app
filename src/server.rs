@@ -16,14 +16,15 @@ fn route_get(route: &str) -> String {
 }
 
 
-
 fn get_json_response(json: &String) -> String {
-    format!("HTTP/1.1 200 OK\n
-        Content-Type: application/json\n
-        Content-Length: {}\r\n
-        {}", json, json.len()+1)
-}
 
+    let header        = "HTTP/1.1 200 OK\n";
+    let content_type  = "Content-Type: application/json\n";
+    let length        = format!("Content-Length: {}\n\n", json.len()+1);
+    let body          = format!("{}", json);
+    format!("{}{}{}{}", header, content_type, length, body)
+
+}
 
 
 
@@ -34,12 +35,11 @@ fn handle_connection(db: &DB, mut stream: TcpStream) {
 
     // db.add_message("mike", "hello");
 
-
-    let response =
-    if request == route_get("/chat_history") {
+    let response = if request == route_get("/chat_history") {
 
         let history: ChatHistory = db.get_history();
-        get_json_response(&history.serialize())
+        let json: String = history.serialize();
+        get_json_response(&json)
 
     }
     else {
@@ -52,6 +52,7 @@ fn handle_connection(db: &DB, mut stream: TcpStream) {
 
 
 
+const ADDRESS: &str = "127.0.0.1:7878";
 
 
 fn main() -> std::io::Result<()> {
@@ -65,14 +66,14 @@ fn main() -> std::io::Result<()> {
         return Ok(());
     }
 
-
-
-    let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
+    let listener = TcpListener::bind(ADDRESS).unwrap();
+    println!("listening...");
 
     // TODO: multithreading
     for stream in listener.incoming() {
         let stream = stream.unwrap();
         handle_connection(&db, stream);
+        println!("connection found!");
     }
 
 

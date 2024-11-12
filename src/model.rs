@@ -43,7 +43,7 @@ impl ChatHistory {
     }
 
     pub fn deserialize(json: &String) -> Self {
-        serde_json::from_str(json).unwrap()
+        serde_json::from_str(json.as_str()).unwrap()
     }
 
 }
