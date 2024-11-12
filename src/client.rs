@@ -74,7 +74,7 @@ impl eframe::App for ChatClient {
 }
 
 
-const WINDOW_WIDTH: f32 = 800.0;
+const WINDOW_WIDTH:  f32 = 800.0;
 const WINDOW_HEIGHT: f32 = 600.0;
 
 
@@ -83,15 +83,17 @@ fn get_chat_history() -> ChatHistory {
         ::get("http://127.0.0.1:7878/chat_history")
         .unwrap();
 
-    let json: String = response.text().unwrap();
-    dbg!(&json);
-    ChatHistory::deserialize(&json)
+    response.json::<ChatHistory>().unwrap()
+    // let json: String = response.text().unwrap();
+    // ChatHistory::deserialize(&json)
+
 }
 
 
 fn main() -> eframe::Result {
 
     let chat: ChatHistory = get_chat_history();
+    dbg!(chat);
 
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()

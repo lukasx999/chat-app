@@ -20,7 +20,7 @@ fn get_json_response(json: &String) -> String {
 
     let header        = "HTTP/1.1 200 OK\n";
     let content_type  = "Content-Type: application/json\n";
-    let length        = format!("Content-Length: {}\n\n", json.len()+1);
+    let length        = format!("Content-Length: {}\n\n", json.len());
     let body          = format!("{}", json);
     format!("{}{}{}{}", header, content_type, length, body)
 
