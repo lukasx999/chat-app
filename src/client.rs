@@ -1,7 +1,7 @@
 use eframe::egui;
 
-mod chat;
-
+mod client_chat;
+use client_chat as chat;
 
 struct ChatClient {
     username: String,

@@ -1,7 +1,5 @@
 use rusqlite::{Connection, Result};
 
-
-// TODO: ???
 use crate::model::{ChatHistory, Message};
 
 

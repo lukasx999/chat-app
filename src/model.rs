@@ -17,15 +17,6 @@ impl Message {
             message: message.to_owned()
         }
     }
-
-    pub fn serialize(&self) -> String {
-        serde_json::to_string(self).unwrap()
-    }
-
-    pub fn from_json(json: &String) -> Self {
-        serde_json::from_str(json).unwrap()
-    }
-
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -39,13 +30,13 @@ impl From<Vec<Message>> for ChatHistory {
 
 impl ChatHistory {
 
-    pub fn new() -> Self {
-        Self(Vec::new())
-    }
+    // pub fn new() -> Self {
+    //     Self(Vec::new())
+    // }
 
-    pub fn add(&mut self, message: &Message) {
-        self.0.push(message.clone());
-    }
+    // pub fn add(&mut self, message: &Message) {
+    //     self.0.push(message.clone());
+    // }
 
     pub fn serialize(&self) -> String {
         serde_json::to_string(&self.0).unwrap()

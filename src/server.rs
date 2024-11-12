@@ -3,8 +3,8 @@ use std:: {
     net::{TcpListener, TcpStream},
 };
 
-mod db;
-use db::{DB};
+mod server_db;
+use server_db::{DB};
 
 mod model;
 use model::{ChatHistory, Message};
@@ -24,7 +24,8 @@ fn handle_connection(db: &DB, mut stream: TcpStream) {
     // db.add_message("mike", "hello");
 
 
-    let response = if request.as_str() == route_get("/chat_history") {
+    let response =
+    if request == route_get("/chat_history") {
 
         let history: ChatHistory = db.get_history();
         let json: String = history.serialize();
@@ -52,8 +53,8 @@ fn main() -> std::io::Result<()> {
     let args: Vec<String> = std::env::args().collect();
     let db = DB::new("chat.db");
 
-    if args.len() == 2 && args[1] == "init" {
-        println!("init!");
+    if args.len() == 2 && args[1] == "setup" {
+        println!("setting up db...");
         db.setup();
         return Ok(());
     }
@@ -62,6 +63,7 @@ fn main() -> std::io::Result<()> {
 
     let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
 
+    // TODO: multithreading
     for stream in listener.incoming() {
         let stream = stream.unwrap();
         handle_connection(&db, stream);
