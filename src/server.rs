@@ -16,6 +16,17 @@ fn route_get(route: &str) -> String {
 }
 
 
+
+fn get_json_response(json: &String) -> String {
+    format!("HTTP/1.1 200 OK\n
+        Content-Type: application/json\n
+        Content-Length: {}\r\n
+        {}", json, json.len()+1)
+}
+
+
+
+
 fn handle_connection(db: &DB, mut stream: TcpStream) {
 
     let buf = BufReader::new(&mut stream);
@@ -28,12 +39,7 @@ fn handle_connection(db: &DB, mut stream: TcpStream) {
     if request == route_get("/chat_history") {
 
         let history: ChatHistory = db.get_history();
-        let json: String = history.serialize();
-
-        format!("HTTP/1.1 200 OK\n
-                Content-Type: application/json\n
-                Content-Length: {}\r\n
-                {}", json, json.len()+1)
+        get_json_response(&history.serialize())
 
     }
     else {
