@@ -2,16 +2,14 @@ use eframe::egui;
 use std::io;
 use std::error::Error;
 
-mod client_chat;
-use client_chat as chat;
-
 mod model;
 use model::{ChatHistory, Message};
 
 
+
+
+// Can hold any type of error
 type E<T> = Result<T, Box<dyn Error>>;
-
-
 
 // Stores the state of the client
 struct ChatClient {
@@ -64,6 +62,12 @@ impl eframe::App for ChatClient {
             //     }
             // });
 
+
+            if ui.button("update History").clicked() {
+                self.fetch_history().unwrap(); // TODO: handle loss of connection
+            }
+
+
             // let textedit: egui::Response = ui.text_edit_singleline(&mut self.current_message);
             // if ui.button("send").clicked() {
             //     self.server_connection.send_message(
@@ -97,7 +101,6 @@ fn get_chat_history() -> E<ChatHistory> {
 
 
 fn main() -> E<()> {
-
 
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
