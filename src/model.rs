@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::io;
 
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -22,6 +23,15 @@ impl Message {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChatHistory(Vec<Message>);
 
+impl ChatHistory {
+    pub fn new() -> Self {
+        Self(Vec::new())
+    }
+    pub fn messages(&self) -> Vec<Message> {
+        self.0.clone()
+    }
+}
+
 impl From<Vec<Message>> for ChatHistory {
     fn from(v: Vec<Message>) -> Self {
         Self(v.clone())
@@ -38,12 +48,12 @@ impl ChatHistory {
     //     self.0.push(message.clone());
     // }
 
-    pub fn serialize(&self) -> String {
-        serde_json::to_string(&self.0).unwrap()
+    pub fn serialize(&self) -> io::Result<String> {
+        Ok(serde_json::to_string(&self.0)?)
     }
 
-    pub fn deserialize(json: &String) -> Self {
-        serde_json::from_str(json.as_str()).unwrap()
+    pub fn deserialize(json: &String) -> io::Result<Self> {
+        Ok(serde_json::from_str(json.as_str())?)
     }
 
 }

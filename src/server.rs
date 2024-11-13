@@ -1,4 +1,5 @@
 use std:: {
+    io,
     io::{prelude::*, BufReader},
     net::{TcpListener, TcpStream},
 };
@@ -15,7 +16,6 @@ fn route_get(route: &str) -> String {
     format!("GET {route} HTTP/1.1")
 }
 
-
 fn get_json_response(json: &String) -> String {
 
     let header        = "HTTP/1.1 200 OK\n";
@@ -26,19 +26,20 @@ fn get_json_response(json: &String) -> String {
 
 }
 
-
-
-fn handle_connection(db: &DB, mut stream: TcpStream) {
+fn handle_connection(db: &DB, mut stream: TcpStream) -> io::Result<()> {
 
     let buf = BufReader::new(&mut stream);
-    let request: String = buf.lines().next().unwrap().unwrap();
+    let request: String = buf
+        .lines()
+        .next()
+        .unwrap()?;
 
     // db.add_message("mike", "hello");
 
     let response = if request == route_get("/chat_history") {
 
         let history: ChatHistory = db.get_history();
-        let json: String = history.serialize();
+        let json: String = history.serialize()?;
         get_json_response(&json)
 
     }
@@ -46,7 +47,8 @@ fn handle_connection(db: &DB, mut stream: TcpStream) {
         "HTTP/1.1 404 NOT FOUND".to_owned()
     };
 
-    stream.write_all(response.as_bytes()).unwrap();
+    stream.write_all(response.as_bytes())?;
+    Ok(())
 
 }
 
@@ -54,8 +56,7 @@ fn handle_connection(db: &DB, mut stream: TcpStream) {
 
 const ADDRESS: &str = "127.0.0.1:7878";
 
-
-fn main() -> std::io::Result<()> {
+fn main() -> io::Result<()> {
 
     let args: Vec<String> = std::env::args().collect();
     let db = DB::new("chat.db");
@@ -66,17 +67,15 @@ fn main() -> std::io::Result<()> {
         return Ok(());
     }
 
-    let listener = TcpListener::bind(ADDRESS).unwrap();
+    let listener = TcpListener::bind(ADDRESS)?;
     println!("listening...");
 
     // TODO: multithreading
     for stream in listener.incoming() {
         let stream = stream.unwrap();
-        handle_connection(&db, stream);
+        handle_connection(&db, stream)?;
         println!("connection found!");
     }
-
-
 
     Ok(())
 
