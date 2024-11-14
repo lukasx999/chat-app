@@ -9,7 +9,7 @@ use model::{ChatHistory, Message};
 
 
 // Can hold any type of error
-type E<T> = Result<T, Box<dyn Error>>;
+type R<T> = Result<T, Box<dyn Error>>;
 
 // Stores the state of the client
 struct ChatClient {
@@ -19,7 +19,7 @@ struct ChatClient {
 }
 
 impl ChatClient {
-    fn new(_cc: &eframe::CreationContext<'_>, name: &str) -> E<Self> {
+    fn new(_cc: &eframe::CreationContext<'_>, name: &str) -> R<Self> {
 
         let mut s = Self {
             username:        name.to_owned(),
@@ -33,8 +33,22 @@ impl ChatClient {
 
     }
 
-    fn fetch_history(&mut self) -> E<()> {
-        self.chat_history = get_chat_history()?;
+    fn fetch_history(&mut self) -> R<()> {
+        let response: reqwest::blocking::Response = reqwest::blocking
+            ::get(format!("{SERVER_ADDRESS}/chat_history"))?;
+
+        let json: String = response.text()?;
+        self.chat_history = ChatHistory::deserialize(&json)?;
+        Ok(())
+    }
+
+    fn send_message(&self, msg: Message) -> R<()> {
+        let client = reqwest::blocking::Client::new();
+
+        client.post(format!("{SERVER_ADDRESS}/send_message"))
+            .body(msg.serialize()?)
+            .send()?;
+
         Ok(())
     }
 
@@ -67,13 +81,15 @@ impl eframe::App for ChatClient {
                 self.fetch_history().unwrap(); // TODO: handle loss of connection
             }
 
+            ui.text_edit_singleline(&mut self.current_message);
 
-            // let textedit: egui::Response = ui.text_edit_singleline(&mut self.current_message);
-            // if ui.button("send").clicked() {
-            //     self.server_connection.send_message(
-            //         chat::ChatMessage::new(self.username.as_str(), self.current_message.as_str())
-            //     );
-            // }
+
+            if ui.button("send").clicked() {
+                let msg = Message::new(None,
+                                       self.username.as_str(),
+                                       self.current_message.as_str());
+                self.send_message(msg).unwrap(); // TODO: handle error
+            }
 
 
             // ui.label(format!("Hello '{}', age {}", self.name, self.age));
@@ -89,18 +105,10 @@ const WINDOW_HEIGHT:  f32  = 600.0;
 const SERVER_ADDRESS: &str = "http://127.0.0.1:7878";
 
 
-fn get_chat_history() -> E<ChatHistory> {
-    let response: reqwest::blocking::Response = reqwest::blocking
-        ::get(format!("{SERVER_ADDRESS}/chat_history"))?;
-
-    let json: String = response.text()?;
-    Ok(ChatHistory::deserialize(&json)?)
-
-}
 
 
 
-fn main() -> E<()> {
+fn main() -> R<()> {
 
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()

@@ -4,20 +4,29 @@ use std::io;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Message {
-    pub id:      u32,
+    pub id:      Option<u32>,
     pub sender:  String,
     pub message: String,
     // extra information (timestampt, ...)
 }
 
 impl Message {
-    pub fn new(id: u32, sender: &str, message: &str) -> Self {
+    pub fn new(id: Option<u32>, sender: &str, message: &str) -> Self {
         Self {
             id,
             sender:  sender.to_owned(),
             message: message.to_owned()
         }
     }
+
+    pub fn serialize(&self) -> io::Result<String> {
+        Ok(serde_json::to_string(self)?)
+    }
+
+    pub fn deserialize(json: String) -> io::Result<Self> {
+        Ok(serde_json::from_str(&json)?)
+    }
+
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

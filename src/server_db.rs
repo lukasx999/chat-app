@@ -32,11 +32,11 @@ impl DB {
     }
 
     // TODO: add proper error handling with results
-    pub fn add_message(&self, sender: &str, message: &str) {
+    pub fn add_message(&self, msg: Message) {
 
         self.conn.execute(
             "INSERT INTO chat (sender, message) VALUES (?1, ?2)",
-            (sender, message)
+            (msg.sender, msg.message)
         ).unwrap();
 
     }
@@ -52,7 +52,7 @@ impl DB {
                     row.get(1).unwrap(),
                     row.get(2).unwrap()
                 );
-                Ok(Message::new(id, sender.as_str(), message.as_str()))
+                Ok(Message::new(Some(id), sender.as_str(), message.as_str()))
             })
                 .unwrap()
                 .map(|item| item.unwrap())

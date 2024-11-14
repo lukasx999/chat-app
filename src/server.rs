@@ -12,9 +12,7 @@ use model::{ChatHistory, Message};
 
 
 
-fn route_get(route: &str) -> String {
-    format!("GET {route} HTTP/1.1")
-}
+
 
 fn get_json_response(json: &String) -> String {
 
@@ -29,28 +27,39 @@ fn get_json_response(json: &String) -> String {
 fn handle_connection(db: &DB, mut stream: TcpStream) -> io::Result<()> {
 
     let buf = BufReader::new(&mut stream);
-    let request: String = buf
-        .lines()
+    let mut buf_lines = buf.lines();
+
+    let request: String = buf_lines
         .next()
-        .unwrap()?;
+        .unwrap()?; // TODO: this
 
-    // db.add_message("mike", "hello");
+    let body: String = buf_lines.nth(2).unwrap()?;
 
-    let response = if request == route_get("/chat_history") {
 
+    let response: Option<String> =
+    if request == "GET /chat_history HTTP/1.1" {
         let history: ChatHistory = db.get_history();
         let json: String = history.serialize()?;
-        get_json_response(&json)
-
+        Some(get_json_response(&json))
+    }
+    else if request == "POST /send_message HTTP/1.1" {
+        // db.add_message("mike", "hello");
+        // dbg!(body);
+        None
     }
     else {
-        "HTTP/1.1 404 NOT FOUND".to_owned()
+        Some("HTTP/1.1 404 NOT FOUND".to_owned())
     };
 
-    stream.write_all(response.as_bytes())?;
+    if let Some(json) = response {
+        stream.write_all(json.as_bytes())?;
+    }
     Ok(())
 
 }
+
+
+
 
 
 
