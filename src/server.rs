@@ -79,7 +79,7 @@ const ADDRESS: &str = "127.0.0.1:7878";
 
 
 async fn chat_history(state: State<Arc<DB>>) -> Json<Message> {
-    state.get_history().await.unwrap();
+    // state.get_history().await.unwrap();
     Json(Message::new(None, "foo", "bar"))
 }
 
@@ -100,7 +100,11 @@ async fn main() -> AnyError<()> {
     // }
 
 
-    let db = DB::new("chat.db").await?;
+
+    let mut db = DB::new("chat.db").await?;
+    let history = db.get_history().await?;
+    dbg!(history);
+
     let state = Arc::new(db);
 
 

@@ -19,6 +19,3 @@ path = "src/client.rs"
 [[bin]]
 name = "server"
 path = "src/server.rs"
-
-[env]
-DATABASE_URL = { relative = true, value = "sqlite://chat.db" }

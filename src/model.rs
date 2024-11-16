@@ -4,14 +4,14 @@ use std::io;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Message {
-    pub id:      Option<u32>,
+    pub id:      Option<i64>,
     pub sender:  String,
     pub message: String,
     // extra information (timestampt, ...)
 }
 
 impl Message {
-    pub fn new(id: Option<u32>, sender: &str, message: &str) -> Self {
+    pub fn new(id: Option<i64>, sender: &str, message: &str) -> Self {
         Self {
             id,
             sender:  sender.to_owned(),

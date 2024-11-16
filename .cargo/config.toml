@@ -1,0 +1,2 @@
+[env]
+DATABASE_URL = { relative = false, value = "sqlite:///home/lukas/Code/Projects/chat-application/src/chat.db" }

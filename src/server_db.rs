@@ -40,40 +40,33 @@ impl DB {
     }
     */
 
-    // pub fn get_history(&self) -> ChatHistory {
+
+    // pub async fn get_history(&mut self) -> sqlx::Result<ChatHistory> {
     //
-    //     let mut stmt = self.conn.prepare("SELECT * FROM chat").unwrap();
+    //     let query = "SELECT id, sender, message FROM chat";
     //
-    //     ChatHistory::from(
-    //         stmt.query_map([], |row| {
-    //             let (id, sender, message): (u32, String, String) = (
-    //                 row.get(0).unwrap(),
-    //                 row.get(1).unwrap(),
-    //                 row.get(2).unwrap()
-    //             );
-    //             Ok(Message::new(Some(id), sender.as_str(), message.as_str()))
-    //         })
-    //             .unwrap()
-    //             .map(|item| item.unwrap())
-    //             .collect::<Vec<Message>>())
+    //     let msgs: Vec<(i32, String, String)> =
+    //     sqlx::query_as(query)
+    //         .fetch_all(&self.conn).await?;
+    //
+    //     let h: Vec<Message> = msgs.iter().map(|message| -> Message {
+    //         Message::new(Some(message.0 as u32), message.1.as_str(), message.2.as_str())
+    //     }).collect();
+    //
+    //     Ok(ChatHistory::from(h))
     //
     // }
 
 
-    pub async fn get_history(&mut self) -> Result<ChatHistory, sqlx::Error> {
+    pub async fn get_history(&mut self) -> sqlx::Result<ChatHistory> {
 
-        let msgs: Vec<(i32, String, String)> =
-        sqlx::query_as("SELECT id, sender, message FROM chat")
+        let msgs: Vec<Message> =
+        sqlx::query_as!(Message, "SELECT id, sender, message FROM chat")
             .fetch_all(&self.conn).await?;
 
-        dbg!(msgs);
-
-
-        // let messages: Vec<dyn sqlx::Row> =
-        // self.conn.fetch_all("SELECT * FROM chat").await.unwrap();
-
-        Ok(ChatHistory::new())
+        Ok(ChatHistory::from(msgs))
 
     }
+
 
 }
