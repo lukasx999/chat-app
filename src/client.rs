@@ -1,30 +1,31 @@
 use eframe::egui;
 use std::io;
-use std::error::Error;
 
 mod model;
 use model::{ChatHistory, Message};
 
-
+use reqwest::blocking::Client as ReqwestClient;
 
 
 // Can hold any type of error
-type R<T> = Result<T, Box<dyn Error>>;
+type AnyError<T> = Result<T, Box<dyn std::error::Error>>;
 
 // Stores the state of the client
 struct ChatClient {
     username:        String,
     current_message: String,
     chat_history:    ChatHistory,
+    request_client:  ReqwestClient,
 }
 
 impl ChatClient {
-    fn new(_cc: &eframe::CreationContext<'_>, name: &str) -> R<Self> {
+    fn new(_cc: &eframe::CreationContext<'_>, name: &str) -> AnyError<Self> {
 
         let mut s = Self {
             username:        name.to_owned(),
             current_message: "".to_owned(),
             chat_history:    ChatHistory::new(),
+            request_client:  ReqwestClient::new(),
         };
 
         s.fetch_history()?;
@@ -33,20 +34,24 @@ impl ChatClient {
 
     }
 
-    fn fetch_history(&mut self) -> R<()> {
-        let response: reqwest::blocking::Response = reqwest::blocking
-            ::get(format!("{SERVER_ADDRESS}/chat_history"))?;
+    fn fetch_history(&mut self) -> AnyError<()> {
+        let response = self.request_client
+            .get(format!("{SERVER_ADDRESS}/chat_history"))
+            .send()?;
 
         let json: String = response.text()?;
         self.chat_history = ChatHistory::deserialize(&json)?;
         Ok(())
     }
 
-    fn send_message(&self, msg: Message) -> R<()> {
-        let client = reqwest::blocking::Client::new();
+    fn send_message(&self, msg: Message) -> AnyError<()> {
 
-        client.post(format!("{SERVER_ADDRESS}/send_message"))
-            .body(msg.serialize()?)
+        let ser = msg.serialize()?;
+
+        self.request_client.post(format!("{SERVER_ADDRESS}/send_message"))
+            .header(reqwest::header::CONTENT_TYPE, "application/json")
+            .header(reqwest::header::CONTENT_LENGTH, ser.len())
+            .body(ser)
             .send()?;
 
         Ok(())
@@ -108,7 +113,7 @@ const SERVER_ADDRESS: &str = "http://127.0.0.1:7878";
 
 
 
-fn main() -> R<()> {
+fn main() -> AnyError<()> {
 
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
