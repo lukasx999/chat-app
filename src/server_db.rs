@@ -17,56 +17,24 @@ impl DB {
         })
     }
 
-    pub async fn setup(&mut self) -> Result<(), sqlx::Error> {
-        self.conn.execute("CREATE TABLE chat (
-                           id      INTEGER PRIMARY KEY,
-                           sender  TEXT NOT NULL,
-                           message TEXT NOT NULL)"
-        ).await?;
+    pub async fn add_message(&self, msg: Message) -> Result<(), sqlx::Error> {
+
+        sqlx::query!("INSERT INTO chat (sender, message) VALUES (?1, ?2)",
+            msg.sender, msg.message)
+            .execute(&self.conn).await?;
+
         Ok(())
-        // TODO: timestamp, ...
 
     }
 
-    /*
-    // TODO: add proper error handling with results
-    pub fn add_message(&self, msg: Message) {
+    pub async fn get_history(&self) -> sqlx::Result<ChatHistory> {
 
-        self.conn.execute(
-            "INSERT INTO chat (sender, message) VALUES (?1, ?2)",
-            (msg.sender, msg.message)
-        ).unwrap();
-
-    }
-    */
-
-
-    // pub async fn get_history(&mut self) -> sqlx::Result<ChatHistory> {
-    //
-    //     let query = "SELECT id, sender, message FROM chat";
-    //
-    //     let msgs: Vec<(i32, String, String)> =
-    //     sqlx::query_as(query)
-    //         .fetch_all(&self.conn).await?;
-    //
-    //     let h: Vec<Message> = msgs.iter().map(|message| -> Message {
-    //         Message::new(Some(message.0 as u32), message.1.as_str(), message.2.as_str())
-    //     }).collect();
-    //
-    //     Ok(ChatHistory::from(h))
-    //
-    // }
-
-
-    pub async fn get_history(&mut self) -> sqlx::Result<ChatHistory> {
-
-        let msgs: Vec<Message> =
+        let messages: Vec<Message> =
         sqlx::query_as!(Message, "SELECT id, sender, message FROM chat")
             .fetch_all(&self.conn).await?;
 
-        Ok(ChatHistory::from(msgs))
+        Ok(ChatHistory::from(messages))
 
     }
-
 
 }

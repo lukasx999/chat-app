@@ -1,15 +1,22 @@
-use std:: {
-    io,
-    io::{prelude::*, BufReader},
-    net::{TcpListener, TcpStream},
-    sync::Arc,
+use std::sync::Arc;
+
+use axum::{
+    routing::{get, post},
+    Router,
+    response::Json,
+    extract::State,
+    http::StatusCode,
 };
 
 mod server_db;
-use server_db::{DB};
+use server_db::DB;
 
 mod model;
 use model::{ChatHistory, Message};
+
+
+const ADDRESS: &str = "127.0.0.1:7878";
+
 
 
 type AnyError<T> = Result<T, Box<dyn std::error::Error>>;
@@ -66,21 +73,36 @@ fn handle_connection(db: &DB, mut stream: TcpStream) -> io::Result<()> {
 
 
 
-use axum::{
-    routing::get,
-    Router,
-    response::Json,
-    extract::State,
-};
-
-
-const ADDRESS: &str = "127.0.0.1:7878";
 
 
 
-async fn chat_history(state: State<Arc<DB>>) -> Json<Message> {
-    // state.get_history().await.unwrap();
-    Json(Message::new(None, "foo", "bar"))
+
+async fn chat_history(state: State<Arc<DB>>)
+-> Result<Json<ChatHistory>, StatusCode> {
+
+    println!("connection found at /chat_history");
+
+    match state.get_history().await {
+        Ok(history) => Ok(Json(history)),
+        Err(_)      => Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR),
+    }
+
+}
+
+
+// TODO: make post request to this route from client
+async fn add_message(state: State<Arc<DB>>)
+-> Result<(), StatusCode> {
+
+    println!("connection found at /add_message");
+
+    let msg = Message::new(None, "gouber", "whats sup");
+
+    match state.add_message(msg).await {
+        Ok(_)  => Ok(()),
+        Err(_) => Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR),
+    }
+
 }
 
 
@@ -90,26 +112,11 @@ async fn chat_history(state: State<Arc<DB>>) -> Json<Message> {
 #[tokio::main]
 async fn main() -> AnyError<()> {
 
-    // let args: Vec<String> = std::env::args().collect();
-    // let db = DB::new("chat.db");
-    //
-    // if args.len() == 2 && args[1] == "setup" {
-    //     println!("setting up db...");
-    //     db.setup();
-    //     return Ok(());
-    // }
-
-
-
-    let mut db = DB::new("chat.db").await?;
-    let history = db.get_history().await?;
-    dbg!(history);
-
-    let state = Arc::new(db);
-
+    let state = Arc::new(DB::new("src/chat.db").await?);
 
     let app = Router::new()
         .route("/chat_history", get(chat_history))
+        .route("/add_message", post(add_message))
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind(ADDRESS).await.unwrap();
@@ -141,22 +148,6 @@ async fn main() -> AnyError<()> {
 
 
 
-
-
-
-    /*
-    let listener = TcpListener::bind(ADDRESS)?;
-    println!("listening...");
-
-    for stream in listener.incoming() {
-        let stream = stream.unwrap();
-        handle_connection(&db, stream)?;
-        println!("connection found!");
-    }
-    */
-
     Ok(())
-
-
 
 }

@@ -12,17 +12,19 @@ type AnyError<T> = Result<T, Box<dyn std::error::Error>>;
 
 // Stores the state of the client
 struct ChatClient {
-    username:        String,
+    username: String,
+
     current_message: String,
     chat_history:    ChatHistory,
+
     request_client:  ReqwestClient,
 }
 
 impl ChatClient {
-    fn new(_cc: &eframe::CreationContext<'_>, name: &str) -> AnyError<Self> {
+    fn new(_cc: &eframe::CreationContext<'_>, username: &str) -> AnyError<Self> {
 
         let mut s = Self {
-            username:        name.to_owned(),
+            username: username.to_owned(),
             current_message: "".to_owned(),
             chat_history:    ChatHistory::new(),
             request_client:  ReqwestClient::new(),
@@ -129,7 +131,7 @@ fn main() -> AnyError<()> {
         "My egui App",
         options,
         Box::new(|cc| {
-            Ok(Box::new(ChatClient::new(cc, "mike").unwrap()))
+            Ok(Box::new(ChatClient::new(cc, "foobar johnson").unwrap()))
         })
     )?)
 

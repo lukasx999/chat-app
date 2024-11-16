@@ -1,0 +1,4 @@
+CREATE TABLE chat (
+id      INTEGER PRIMARY KEY,
+sender  TEXT NOT NULL,
+message TEXT NOT NULL)
