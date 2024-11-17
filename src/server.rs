@@ -3,8 +3,15 @@ use std::sync::Arc;
 use axum::{
     routing::{get, post},
     Router,
-    response::Json,
-    extract::State,
+    response::{Json, Response},
+    extract::{
+        State,
+        ws::{
+            self,
+            WebSocket,
+            WebSocketUpgrade,
+        },
+    },
     http::StatusCode,
 };
 
@@ -23,66 +30,14 @@ type AnyError<T> = Result<T, Box<dyn std::error::Error>>;
 
 
 
-fn get_json_response(json: &String) -> String {
-
-    let header        = "HTTP/1.1 200 OK\n";
-    let content_type  = "Content-Type: application/json\n";
-    let length        = format!("Content-Length: {}\n\n", json.len());
-    let body          = format!("{}", json);
-    format!("{}{}{}{}", header, content_type, length, body)
-
-}
-
-/*
-fn handle_connection(db: &DB, mut stream: TcpStream) -> io::Result<()> {
-
-    let buf = BufReader::new(&mut stream);
-    let mut buf_lines = buf.lines();
-
-    let request: String = buf_lines
-        .next()
-        .unwrap()?; // TODO: this
-
-    let body: String = buf_lines.nth(2).unwrap()?;
-    dbg!(&request);
-
-    let response: Option<String> =
-    if request == "GET /chat_history HTTP/1.1" {
-        let history: ChatHistory = db.get_history();
-        let json: String = history.serialize()?;
-        Some(get_json_response(&json))
-    }
-    else if request == "POST /send_message HTTP/1.1" {
-        // db.add_message("mike", "hello");
-        // dbg!(body);
-        None
-    }
-    else {
-        Some("HTTP/1.1 404 NOT FOUND".to_owned())
-    };
-
-    if let Some(json) = response {
-        stream.write_all(json.as_bytes())?;
-    }
-    Ok(())
-
-}
-*/
-
-
-
-
-
-
-
-
 
 async fn chat_history(state: State<Arc<DB>>)
 -> Result<Json<ChatHistory>, StatusCode> {
 
+    let db: Arc<DB> = state.0;
     println!("connection found at /chat_history");
 
-    match state.get_history().await {
+    match db.get_history().await {
         Ok(history) => Ok(Json(history)),
         Err(_)      => Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR),
     }
@@ -90,19 +45,36 @@ async fn chat_history(state: State<Arc<DB>>)
 }
 
 
-// TODO: make post request to this route from client
-async fn add_message(state: State<Arc<DB>>)
+async fn add_message(state: State<Arc<DB>>, payload: Json<Message>)
 -> Result<(), StatusCode> {
 
+    let db: Arc<DB> = state.0;
     println!("connection found at /add_message");
 
-    let msg = Message::new(None, "gouber", "whats sup");
+    let message: Message = payload.0;
 
-    match state.add_message(msg).await {
+    match db.add_message(message).await {
         Ok(_)  => Ok(()),
         Err(_) => Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR),
     }
 
+}
+
+
+async fn ws_upgrade_handler(ws: WebSocketUpgrade, state: State<Arc<DB>>)
+-> Response {
+
+    println!("connection found at /ws");
+
+    ws.on_upgrade(|socket| ws_handler(socket, state))
+
+}
+
+
+// TODO: send new message via websocket when new message gets added
+async fn ws_handler(mut socket: WebSocket, state: State<Arc<DB>>) {
+    let t = ws::Message::Text("greetings".to_owned());
+    socket.send(t).await.unwrap();
 }
 
 
@@ -115,38 +87,13 @@ async fn main() -> AnyError<()> {
     let state = Arc::new(DB::new("src/chat.db").await?);
 
     let app = Router::new()
-        .route("/chat_history", get(chat_history))
-        .route("/add_message", post(add_message))
+        .route("/chat_history", get (chat_history))
+        .route("/add_message",  post(add_message))
+        .route("/ws",           get (ws_upgrade_handler))
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind(ADDRESS).await.unwrap();
     axum::serve(listener, app).await.unwrap();
-
-
-
-    // let response: Option<String> =
-    // if request == "GET /chat_history HTTP/1.1" {
-
-            // let history: ChatHistory = db.get_history();
-            // let json: String = history.serialize()?;
-            // Some(get_json_response(&json))
-
-    // }
-    // else if request == "POST /send_message HTTP/1.1" {
-    //     // db.add_message("mike", "hello");
-    //     // dbg!(body);
-    //     None
-    // }
-    // else {
-    //     Some("HTTP/1.1 404 NOT FOUND".to_owned())
-    // };
-    //
-    // if let Some(json) = response {
-    //     stream.write_all(json.as_bytes())?;
-    // }
-    // Ok(())
-
-
 
     Ok(())
 

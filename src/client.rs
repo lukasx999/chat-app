@@ -1,5 +1,4 @@
-use eframe::egui;
-use std::io;
+use eframe::egui::{self, TextEdit};
 
 mod model;
 use model::{ChatHistory, Message};
@@ -50,7 +49,7 @@ impl ChatClient {
 
         let ser = msg.serialize()?;
 
-        self.request_client.post(format!("{SERVER_ADDRESS}/send_message"))
+        self.request_client.post(format!("{SERVER_ADDRESS}/add_message"))
             .header(reqwest::header::CONTENT_TYPE, "application/json")
             .header(reqwest::header::CONTENT_LENGTH, ser.len())
             .body(ser)
@@ -88,6 +87,7 @@ impl eframe::App for ChatClient {
                 self.fetch_history().unwrap(); // TODO: handle loss of connection
             }
 
+            let edit_currentmsg: egui::Response =
             ui.text_edit_singleline(&mut self.current_message);
 
 
@@ -96,6 +96,7 @@ impl eframe::App for ChatClient {
                                        self.username.as_str(),
                                        self.current_message.as_str());
                 self.send_message(msg).unwrap(); // TODO: handle error
+                self.current_message.clear();
             }
 
 
@@ -107,8 +108,8 @@ impl eframe::App for ChatClient {
 }
 
 
-const WINDOW_WIDTH:   f32  = 800.0;
-const WINDOW_HEIGHT:  f32  = 600.0;
+const WINDOW_WIDTH:   f32  = 1200.0;
+const WINDOW_HEIGHT:  f32  = 1000.0;
 const SERVER_ADDRESS: &str = "http://127.0.0.1:7878";
 
 
@@ -126,6 +127,7 @@ fn main() -> AnyError<()> {
             .with_inner_size([WINDOW_WIDTH, WINDOW_HEIGHT]),
         ..Default::default()
     };
+
 
     Ok(eframe::run_native(
         "My egui App",
