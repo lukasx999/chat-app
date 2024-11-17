@@ -31,8 +31,9 @@ type AnyError<T> = Result<T, Box<dyn std::error::Error>>;
 
 
 
-async fn chat_history(state: State<Arc<DB>>)
--> Result<Json<ChatHistory>, StatusCode> {
+async fn chat_history(
+    state: State<Arc<DB>>
+) -> Result<Json<ChatHistory>, StatusCode> {
 
     let db: Arc<DB> = state.0;
     println!("connection found at /chat_history");
@@ -45,8 +46,9 @@ async fn chat_history(state: State<Arc<DB>>)
 }
 
 
-async fn add_message(state: State<Arc<DB>>, payload: Json<Message>)
--> Result<(), StatusCode> {
+async fn add_message(
+    state: State<Arc<DB>>, payload: Json<Message>
+) -> Result<(), StatusCode> {
 
     let db: Arc<DB> = state.0;
     println!("connection found at /add_message");
@@ -61,8 +63,9 @@ async fn add_message(state: State<Arc<DB>>, payload: Json<Message>)
 }
 
 
-async fn ws_upgrade_handler(ws: WebSocketUpgrade, state: State<Arc<DB>>)
--> Response {
+async fn ws_upgrade_handler(
+    ws: WebSocketUpgrade, state: State<Arc<DB>>
+) -> Response {
 
     println!("connection found at /ws");
 
