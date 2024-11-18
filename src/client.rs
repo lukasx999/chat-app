@@ -5,6 +5,19 @@ use model::{ChatHistory, Message};
 
 use reqwest::blocking::Client as ReqwestClient;
 
+use tokio_tungstenite::{WebSocketStream};
+// tungstenite::protocol::Message
+
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use futures::StreamExt;
+
+
+const WINDOW_WIDTH:   f32  = 1200.0;
+const WINDOW_HEIGHT:  f32  = 1000.0;
+const SERVER_ADDRESS: &str = "http://127.0.0.1:7878";
+
+
+
 
 // Can hold any type of error
 type AnyError<T> = Result<T, Box<dyn std::error::Error>>;
@@ -23,7 +36,7 @@ impl ChatClient {
     fn new(_cc: &eframe::CreationContext<'_>, username: &str) -> AnyError<Self> {
 
         let mut s = Self {
-            username: username.to_owned(),
+            username:        username.to_owned(),
             current_message: "".to_owned(),
             chat_history:    ChatHistory::new(),
             request_client:  ReqwestClient::new(),
@@ -32,6 +45,18 @@ impl ChatClient {
         s.fetch_history()?;
 
         Ok(s)
+
+    }
+
+
+    async fn connect_websocket(&self) -> Result<(), tokio_tungstenite::tungstenite::Error> {
+
+        let (ws_stream, _): (WebSocketStream<_>, _) =
+        tokio_tungstenite::connect_async(format!("{SERVER_ADDRESS}/ws")).await?;
+
+        let (write, read) = ws_stream.split();
+
+        Ok(())
 
     }
 
@@ -61,6 +86,8 @@ impl ChatClient {
 }
 
 
+
+
 impl eframe::App for ChatClient {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
@@ -81,6 +108,9 @@ impl eframe::App for ChatClient {
             //         println!("you pressed enter");
             //     }
             // });
+
+
+
 
 
             if ui.button("update History").clicked() {
@@ -108,9 +138,6 @@ impl eframe::App for ChatClient {
 }
 
 
-const WINDOW_WIDTH:   f32  = 1200.0;
-const WINDOW_HEIGHT:  f32  = 1000.0;
-const SERVER_ADDRESS: &str = "http://127.0.0.1:7878";
 
 
 
@@ -127,7 +154,6 @@ fn main() -> AnyError<()> {
             .with_inner_size([WINDOW_WIDTH, WINDOW_HEIGHT]),
         ..Default::default()
     };
-
 
     Ok(eframe::run_native(
         "My egui App",
